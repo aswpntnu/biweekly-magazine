@@ -1,1 +1,56 @@
 
+media:
+  - name: images
+    label: 封面及圖片
+    input: public/images
+    output: /images
+    extensions:
+      - jpg
+      - jpeg
+      - png
+      - webp
+
+content:
+  - name: issues
+    label: 期刊管理
+    type: collection
+    path: content/issues
+    filename: "{primary}.md"
+    format: yaml-frontmatter
+    fields:
+      - name: title
+        label: 期刊標題
+        type: string
+        required: true
+
+      - name: issue_number
+        label: 期數
+        type: string
+        required: true
+
+      - name: publish_date
+        label: 出版日期
+        type: date
+
+      - name: cover
+        label: 封面圖片
+        type: image
+        options:
+          media: images
+
+      - name: pdf_url
+        label: 原始 PDF 網址
+        type: string
+        required: true
+
+      - name: description
+        label: 期刊介紹
+        type: text
+
+      - name: published
+        label: 是否公開
+        type: boolean
+
+      - name: body
+        label: 內容介紹
+        type: rich-text
