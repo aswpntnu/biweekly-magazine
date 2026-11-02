@@ -23,19 +23,71 @@ const { issue } = Astro.props;
     <title>{issue.data.title}｜適界PLUS</title>
   </head>
 
-  <body>
+  <body data-pdf-url={issue.data.pdf_url}>
     <main>
       <a href="/">← 返回期刊首頁</a>
-
       <h1>{issue.data.title}</h1>
+      <p>{issue.data.description}</p>
 
-      <p>
-        {issue.data.description}
-      </p>
-
-      <div id="reader">
-        閱讀器準備中……
-      </div>
+      <div id="pdf-status">PDF 載入中，請稍候……</div>
+      <div id="pdf-pages"></div>
     </main>
+
+    <script>
+      import * as pdfjsLib from 'pdfjs-dist';
+      import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+
+      pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+
+      const pdfUrl = document.body.dataset.pdfUrl;
+
+      async function loadPDF() {
+        const status = document.querySelector('#pdf-status');
+        const container = document.querySelector('#pdf-pages');
+
+        if (!status || !container || !pdfUrl) {
+          if (status) status.textContent = '找不到 PDF 網址。';
+          return;
+        }
+
+        try {
+          const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+
+          status.textContent = `PDF 載入成功！共 ${pdf.numPages} 頁。`;
+
+          for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+            const page = await pdf.getPage(pageNumber);
+            const viewport = page.getViewport({ scale: 1.2 });
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            if (!context) continue;
+
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            canvas.style.width = '100%';
+            canvas.style.maxWidth = '800px';
+            canvas.style.display = 'block';
+            canvas.style.margin = '20px auto';
+            canvas.style.background = 'white';
+            canvas.style.boxShadow = '0 2px 12px rgba(0,0,0,0.15)';
+
+            container.appendChild(canvas);
+
+            await page.render({
+              canvasContext: context,
+              viewport,
+            }).promise;
+          }
+        } catch (error) {
+          console.error('PDF 載入失敗：', error);
+          status.textContent =
+            'PDF 載入失敗，請檢查網址或跨來源讀取權限。';
+        }
+      }
+
+      loadPDF();
+    </script>
   </body>
 </html>
