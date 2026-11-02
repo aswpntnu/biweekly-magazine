@@ -14,8 +14,8 @@ const issues = allIssues
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="適界PLUS雙週刊，推廣適應體育、適應運動。" />
-  <title>適界PLUS｜適應運動雙週刊</title>
+  <meta name="description" content="適界PLUS＋月刊，推廣適應體育、適應運動。" />
+  <title>適界PLUS＋｜適應運動月刊</title>
 </head>
 
 <body>
@@ -39,7 +39,7 @@ const issues = allIssues
       <p class="section-label">ABOUT US</p>
       <h2>認識適界 PLUS</h2>
       <p>
-        《適界PLUS》是以適應運動為核心主題的雙週刊，
+        《適界PLUS＋》是以適應運動為核心主題的月刊，
         透過國內外研究、國際實務案例及專業知識介紹，
         推廣適應體育、適應運動相關概念，
         促進不同能力者平等參與運動。
@@ -54,10 +54,7 @@ const issues = allIssues
         <div class="issue-list">
           {issues.map((issue) => (
             <article class="issue-card">
-<img src="/images/封面.jpg" alt={`${issue.data.title}封面`} />
-              {issue.data.cover && (
-                <img src={issue.data.cover} alt={`${issue.data.title}封面`} />
-              )}
+<img src={issue.data.cover || "/images/封面.jpg"} alt={`${issue.data.title}封面`} />
               <div class="issue-info">
                 <p class="date">
                   {issue.data.publish_date || '出版日期待定'}
@@ -67,12 +64,12 @@ const issues = allIssues
                 <p>{issue.data.description}</p>
                 {issue.data.pdf_url && (
                   <a
-                    class="read-button"
-                    href={issue.data.pdf_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    閱讀本期刊物 ↗
+                   <a
+  class="read-button"
+  href={`/read/${issue.id}`}
+>
+  翻頁閱讀本期刊物 ↗
+</a>
                   </a>
                 )}
               </div>
@@ -86,8 +83,14 @@ const issues = allIssues
   </main>
 
   <footer>
-    <p>《適界PLUS》適應運動雙週刊</p>
-    <p>國立臺灣師範大學體育研究與發展中心</p>
+    <p>《適界PLUS＋》適應運動月刊</p>
+    <p>電話(02)7749-3256
+(02)7749-6990</p>
+   <p>E-mail aswp.ntnu@gmail.com</p>
+    <p>指導單位 115年至116年運動部適應運動國際專業培力計畫
+運動部 適應運動司</p>
+    <p>發行單位 國立臺灣師範大學體育研究與發展中心</p>
+    <p>地址 臺北市大安區和平東路一段162號</p>
   </footer>
 </body>
 </html>
