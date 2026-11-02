@@ -1,11 +1,15 @@
 import { defineCollection, z } from 'astro:content';
+import { glob } from 'astro/loaders';
 
 const issues = defineCollection({
-  type: 'content',
+  loader: glob({
+    pattern: '**/*.md',
+    base: './content/issues',
+  }),
   schema: z.object({
     title: z.string(),
     issue_number: z.string().optional(),
-    publish_date: z.string().optional(),
+    publish_date: z.coerce.string().optional(),
     cover: z.string().optional(),
     pdf_url: z.string().optional(),
     description: z.string().optional(),
