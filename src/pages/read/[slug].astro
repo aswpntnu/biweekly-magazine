@@ -81,7 +81,7 @@ const { issue } = Astro.props;
 <p>PDF 網址測試：{issue.data.pdf_url}</p>
 
       <p class="description">{issue.data.description}</p>
-
+<div id="pdf-config" data-pdf-url={issue.data.pdf_url}></div>
       <div id="pdf-status">PDF 載入中，請稍候……</div>
 
       <div id="pdf-pages"></div>
@@ -96,7 +96,7 @@ const { issue } = Astro.props;
       async function loadPDF() {
         const status = document.querySelector('#pdf-status');
         const container = document.querySelector('#pdf-pages');
-        const pdfUrl = document.body.getAttribute('data-pdf-url');
+        const pdfUrl = document.querySelector('#pdf-config')?.getAttribute('data-pdf-url');
 
         if (!status || !container) {
           return;
