@@ -14,7 +14,7 @@ const issues = allIssues
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="適界PLUS雙週刊，推廣適應體育、適應運動與帕拉運動。" />
+  <meta name="description" content="適界PLUS雙週刊，推廣適應體育、適應運動。" />
   <title>適界PLUS｜適應運動雙週刊</title>
 </head>
 
@@ -41,7 +41,7 @@ const issues = allIssues
       <p>
         《適界PLUS》是以適應運動為核心主題的雙週刊，
         透過國內外研究、國際實務案例及專業知識介紹，
-        推廣適應體育、適應運動與帕拉運動相關概念，
+        推廣適應體育、適應運動相關概念，
         促進不同能力者平等參與運動。
       </p>
     </section>
@@ -54,6 +54,7 @@ const issues = allIssues
         <div class="issue-list">
           {issues.map((issue) => (
             <article class="issue-card">
+<img src="/images/封面.jpg" alt={`${issue.data.title}封面`} />
               {issue.data.cover && (
                 <img src={issue.data.cover} alt={`${issue.data.title}封面`} />
               )}
