@@ -2,6 +2,7 @@
 title: 《適界PLUS》第一卷第一期｜認識適應運動，從改變視角開始：從專業名詞到帕拉運動教育，重新理解運動的多元可能
 issue_number: 第一卷第一期（Vol. 01, Issue 01）
 publish_date: 2026-10-30
+cover: /images/封面.jpg
 pdf_url: https://drive.google.com/file/d/1ty2lm_rQWxAPKXYmz5dLHdPw1fj6kBT7/view?usp=sharing
 description: |-
   《適界PLUS》為國立臺灣師範大學體育研究與發展中心執行「運動部適應運動國際專業培力計畫」所發行的雙週刊，指導單位為運動部適應運動司，於2026年10月創刊。
