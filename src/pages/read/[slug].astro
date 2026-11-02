@@ -136,6 +136,23 @@ const { issue } = Astro.props;
       import * as pdfjsLib from 'pdfjs-dist';
       import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
       import { PageFlip } from 'page-flip';
+if (!Map.prototype.getOrInsertComputed) {
+  Map.prototype.getOrInsertComputed = function (key, callback) {
+    if (!this.has(key)) {
+      this.set(key, callback(key));
+    }
+    return this.get(key);
+  };
+}
+
+if (!WeakMap.prototype.getOrInsertComputed) {
+  WeakMap.prototype.getOrInsertComputed = function (key, callback) {
+    if (!this.has(key)) {
+      this.set(key, callback(key));
+    }
+    return this.get(key);
+  };
+}
 
       pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
