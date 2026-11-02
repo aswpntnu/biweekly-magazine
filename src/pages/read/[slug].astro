@@ -72,21 +72,33 @@ const { issue } = Astro.props;
         width: 100%;
         display: flex;
         justify-content: center;
-        overflow: hidden;
+        overflow: auto;
         margin: 24px auto;
+        touch-action: none;
+        -webkit-overflow-scrolling: touch;
       }
 
       #book {
         width: 100%;
         max-width: 1200px;
         margin: 0 auto;
+        transform-origin: center top;
+        flex-shrink: 0;
+      }
+
+      .zoom-hint {
+        text-align: center;
+        color: #666;
+        font-size: 14px;
+        margin: 12px 0;
       }
 
       .controls {
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 20px;
+        flex-wrap: wrap;
+        gap: 12px;
         margin: 20px auto;
       }
 
@@ -109,6 +121,25 @@ const { issue } = Astro.props;
         color: #555;
         font-size: 14px;
       }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 16px 10px 36px;
+        }
+
+        h1 {
+          font-size: 21px;
+        }
+
+        .controls {
+          gap: 8px;
+        }
+
+        .controls button {
+          padding: 10px 14px;
+          font-size: 14px;
+        }
+      }
     </style>
   </head>
 
@@ -125,6 +156,10 @@ const { issue } = Astro.props;
         <div id="book"></div>
       </div>
 
+      <p class="zoom-hint">
+        手機閱讀：用兩根手指張開放大、靠近縮小
+      </p>
+
       <div class="controls">
         <button id="prev-button" disabled>上一頁</button>
         <span id="page-number">準備中</span>
@@ -132,46 +167,59 @@ const { issue } = Astro.props;
       </div>
     </main>
 
+    <div
+      id="pdf-config"
+      data-pdf-url={issue.data.pdf_url}
+    ></div>
+
     <script>
       import * as pdfjsLib from 'pdfjs-dist';
       import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
       import { PageFlip } from 'page-flip';
-if (!Map.prototype.getOrInsertComputed) {
-  Map.prototype.getOrInsertComputed = function (key, callback) {
-    if (!this.has(key)) {
-      this.set(key, callback(key));
-    }
-    return this.get(key);
-  };
-}
 
-if (!WeakMap.prototype.getOrInsertComputed) {
-  WeakMap.prototype.getOrInsertComputed = function (key, callback) {
-    if (!this.has(key)) {
-      this.set(key, callback(key));
-    }
-    return this.get(key);
-  };
-}
+      if (!Map.prototype.getOrInsertComputed) {
+        Map.prototype.getOrInsertComputed = function (key, callback) {
+          if (!this.has(key)) {
+            this.set(key, callback(key));
+          }
+          return this.get(key);
+        };
+      }
+
+      if (!WeakMap.prototype.getOrInsertComputed) {
+        WeakMap.prototype.getOrInsertComputed = function (key, callback) {
+          if (!this.has(key)) {
+            this.set(key, callback(key));
+          }
+          return this.get(key);
+        };
+      }
 
       pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
       async function loadPDF() {
         const status = document.querySelector('#pdf-status');
         const bookElement = document.querySelector('#book');
+        const bookArea = document.querySelector('#book-area');
         const pageNumber = document.querySelector('#page-number');
         const prevButton = document.querySelector('#prev-button');
         const nextButton = document.querySelector('#next-button');
+        const pdfConfig = document.querySelector('#pdf-config');
 
-        const pdfUrl = '/images/PLUS.VOL.01.ISSUE.01.pdf';
+        const pdfUrl = pdfConfig?.getAttribute('data-pdf-url');
 
         if (
           !status ||
           !bookElement ||
+          !bookArea ||
           !pageNumber ||
           !prevButton ||
-          !nextButton
+          !nextButton ||
+          !pdfUrl
         ) {
+          if (status) {
+            status.textContent = '找不到 PDF 檔案網址，請檢查期刊資料。';
+          }
           return;
         }
 
@@ -201,11 +249,12 @@ if (!WeakMap.prototype.getOrInsertComputed) {
 
             if (pageIndex === 1) {
               bookWidth = 600;
-              bookHeight =
-                Math.round(600 * baseViewport.height / baseViewport.width);
+              bookHeight = Math.round(
+                600 * baseViewport.height / baseViewport.width
+              );
             }
 
-            const viewport = page.getViewport({ scale: 1.5 });
+            const viewport = page.getViewport({ scale: 2.5 });
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
 
@@ -222,7 +271,7 @@ if (!WeakMap.prototype.getOrInsertComputed) {
               viewport,
             }).promise;
 
-            pageImages.push(canvas.toDataURL('image/jpeg', 0.88));
+            pageImages.push(canvas.toDataURL('image/jpeg', 0.95));
 
             canvas.width = 0;
             canvas.height = 0;
@@ -271,6 +320,81 @@ if (!WeakMap.prototype.getOrInsertComputed) {
             pageFlip.flipNext();
           });
 
+          // 雙指縮放功能
+          let zoomScale = 1;
+          const minZoom = 1;
+          const maxZoom = 3.5;
+          const activePointers = new Map();
+          let startDistance = 0;
+          let startScale = 1;
+
+          function getDistance(pointA, pointB) {
+            const dx = pointA.x - pointB.x;
+            const dy = pointA.y - pointB.y;
+
+            return Math.sqrt(dx * dx + dy * dy);
+          }
+
+          function applyZoom() {
+            bookElement.style.transform = `scale(${zoomScale})`;
+          }
+
+          bookArea.addEventListener('pointerdown', (event) => {
+            activePointers.set(event.pointerId, {
+              x: event.clientX,
+              y: event.clientY,
+            });
+
+            if (activePointers.size === 2) {
+              const points = Array.from(activePointers.values());
+
+              startDistance = getDistance(points[0], points[1]);
+              startScale = zoomScale;
+            }
+          });
+
+          bookArea.addEventListener('pointermove', (event) => {
+            if (!activePointers.has(event.pointerId)) {
+              return;
+            }
+
+            activePointers.set(event.pointerId, {
+              x: event.clientX,
+              y: event.clientY,
+            });
+
+            if (activePointers.size === 2) {
+              event.preventDefault();
+
+              const points = Array.from(activePointers.values());
+              const currentDistance = getDistance(points[0], points[1]);
+
+              if (startDistance > 0) {
+                zoomScale = Math.min(
+                  maxZoom,
+                  Math.max(
+                    minZoom,
+                    startScale * currentDistance / startDistance
+                  )
+                );
+
+                applyZoom();
+              }
+            }
+          });
+
+          function endPointer(event) {
+            activePointers.delete(event.pointerId);
+
+            if (activePointers.size < 2) {
+              startDistance = 0;
+            }
+          }
+
+          bookArea.addEventListener('pointerup', endPointer);
+          bookArea.addEventListener('pointercancel', endPointer);
+          bookArea.addEventListener('pointerleave', endPointer);
+
           updateControls();
 
           status.textContent =
@@ -289,3 +413,4 @@ if (!WeakMap.prototype.getOrInsertComputed) {
     </script>
   </body>
 </html>
+
