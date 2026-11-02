@@ -1,0 +1,67 @@
+---
+import '../styles/global.css';
+
+const issues = [
+  {
+    title: '《適界PLUS》第一卷第一期',
+    subtitle: '認識適應運動，從改變視角開始',
+    date: '2026.10.30',
+    cover: '/images/封面.jpg',
+    description: '從專業名詞到帕拉運動教育，重新理解運動的多元可能。',
+    pdf: 'https://drive.google.com/file/d/1ty2lm_rQWxAPKXYmz5dLHdPw1fj6kBT7/view?usp=sharing'
+  }
+];
+---
+
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="適界PLUS雙週刊，推廣適應體育、適應運動與帕拉運動。" />
+  <title>適界PLUS｜適應運動雙週刊</title>
+</head>
+
+<body>
+  <header class="header">
+    <a href="/" class="brand">適界<span>PLUS</span></a>
+    <nav><a href="#about">關於本刊</a><a href="#issues">歷期刊物</a></nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">ADAPTED SPORTS · BIWEEKLY MAGAZINE</p>
+      <h1>讓運動不再受限，<br />讓參與擁有更多可能。</h1>
+      <p>從知識、研究到國際實踐，一起探索適應運動的多元世界。</p>
+      <a class="hero-button" href="#issues">探索最新一期 ↓</a>
+    </section>
+
+    <section id="about" class="about">
+      <p class="section-label">ABOUT US</p>
+      <h2>認識適界 PLUS</h2>
+      <p>《適界PLUS》是以適應運動為核心主題的雙週刊，透過國內外研究、國際實務案例及專業知識介紹，推廣適應體育、適應運動與帕拉運動相關概念，促進不同能力者平等參與運動。</p>
+    </section>
+
+    <section id="issues" class="issues">
+      <p class="section-label">LATEST ISSUE</p>
+      <h2>最新一期</h2>
+      {issues.map((issue) => (
+        <article class="issue-card">
+          <img src={issue.cover} alt="適界PLUS第一期封面" />
+          <div class="issue-info">
+            <p class="date">{issue.date} · VOL.01 ISSUE 01</p>
+            <h3>{issue.title}</h3>
+            <h4>{issue.subtitle}</h4>
+            <p>{issue.description}</p>
+            <a class="read-button" href={issue.pdf} target="_blank" rel="noopener noreferrer">閱讀本期刊物 ↗</a>
+          </div>
+        </article>
+      ))}
+    </section>
+  </main>
+
+  <footer>
+    <p>《適界PLUS》適應運動雙週刊</p>
+    <p>國立臺灣師範大學體育研究與發展中心</p>
+  </footer>
+</body>
+</html>
