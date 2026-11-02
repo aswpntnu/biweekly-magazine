@@ -20,7 +20,7 @@ const { issue } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{issue.data.title}｜適界PLUS</title>
+    <title>{issue.data.title}｜適界PLUS＋</title>
   </head>
 
   <body data-pdf-url={issue.data.pdf_url}>
@@ -39,7 +39,7 @@ const { issue } = Astro.props;
 
       pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-      const pdfUrl = document.body.dataset.pdfUrl;
+      const pdfUrl = document.querySelector('body')?.getAttribute('data-pdf-url');
 
       async function loadPDF() {
         const status = document.querySelector('#pdf-status');
