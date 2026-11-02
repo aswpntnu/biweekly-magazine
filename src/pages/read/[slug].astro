@@ -20,16 +20,69 @@ const { issue } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={issue.data.description} />
     <title>{issue.data.title}｜適界PLUS＋</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px 16px;
+        background: #f3f3f3;
+        color: #222;
+        font-family: Arial, "Noto Sans TC", sans-serif;
+      }
+
+      main {
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      .back-link {
+        display: inline-block;
+        margin-bottom: 24px;
+        color: #555;
+        text-decoration: none;
+      }
+
+      h1 {
+        font-size: 26px;
+        line-height: 1.5;
+      }
+
+      .description {
+        line-height: 1.9;
+        color: #555;
+        white-space: pre-line;
+      }
+
+      #pdf-status {
+        margin: 28px 0;
+        padding: 16px;
+        background: white;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      #pdf-pages canvas {
+        height: auto;
+      }
+    </style>
   </head>
 
-  <body data-pdf-url={issue.data.pdf_url}>
+  <body data-pdf-url={issue.data.pdf_url ?? ''}>
     <main>
-      <a href="/">← 返回期刊首頁</a>
+      <a class="back-link" href="/">← 返回期刊首頁</a>
+
       <h1>{issue.data.title}</h1>
-      <p>{issue.data.description}</p>
+
+      <p class="description">{issue.data.description}</p>
 
       <div id="pdf-status">PDF 載入中，請稍候……</div>
+
       <div id="pdf-pages"></div>
     </main>
 
@@ -39,51 +92,66 @@ const { issue } = Astro.props;
 
       pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-      const pdfUrl = document.querySelector('body')?.getAttribute('data-pdf-url');
-
       async function loadPDF() {
         const status = document.querySelector('#pdf-status');
         const container = document.querySelector('#pdf-pages');
+        const pdfUrl = document.body.getAttribute('data-pdf-url');
 
-        if (!status || !container || !pdfUrl) {
-          if (status) status.textContent = '找不到 PDF 網址。';
+        if (!status || !container) {
+          return;
+        }
+
+        if (!pdfUrl) {
+          status.textContent = '找不到 PDF 網址，請檢查期刊資料。';
           return;
         }
 
         try {
-          const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+          status.textContent = '正在讀取 PDF，請稍候……';
+
+          const loadingTask = pdfjsLib.getDocument({
+            url: pdfUrl,
+          });
+
+          const pdf = await loadingTask.promise;
 
           status.textContent = `PDF 載入成功！共 ${pdf.numPages} 頁。`;
 
           for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
             const page = await pdf.getPage(pageNumber);
-            const viewport = page.getViewport({ scale: 1.2 });
+            const viewport = page.getViewport({ scale: 1.3 });
 
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
 
-            if (!context) continue;
+            if (!context) {
+              continue;
+            }
 
             canvas.width = viewport.width;
             canvas.height = viewport.height;
-            canvas.style.width = '100%';
-            canvas.style.maxWidth = '800px';
+
             canvas.style.display = 'block';
-            canvas.style.margin = '20px auto';
-            canvas.style.background = 'white';
+            canvas.style.width = '100%';
+            canvas.style.height = 'auto';
+            canvas.style.maxWidth = '850px';
+            canvas.style.margin = '24px auto';
+            canvas.style.background = '#fff';
             canvas.style.boxShadow = '0 2px 12px rgba(0,0,0,0.15)';
 
             container.appendChild(canvas);
 
             await page.render({
+              canvas,
               canvasContext: context,
               viewport,
             }).promise;
           }
         } catch (error) {
           console.error('PDF 載入失敗：', error);
+
           status.textContent =
-            'PDF 載入失敗，請檢查網址或跨來源讀取權限。';
+            'PDF 載入失敗，可能是網址、網路或跨來源讀取權限問題。';
         }
       }
 
