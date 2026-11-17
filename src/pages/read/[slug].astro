@@ -31,20 +31,21 @@ const { issue } = Astro.props;
 
       body {
         margin: 0;
-        padding: 24px 16px 48px;
+        padding: 20px 14px 40px;
         background: #f3f3f3;
         color: #222;
         font-family: Arial, "Noto Sans TC", sans-serif;
       }
 
       main {
-        max-width: 1200px;
+        width: 100%;
+        max-width: 900px;
         margin: 0 auto;
       }
 
       .back-link {
         display: inline-block;
-        margin-bottom: 24px;
+        margin-bottom: 18px;
         color: #555;
         text-decoration: none;
       }
@@ -61,68 +62,44 @@ const { issue } = Astro.props;
       }
 
       #pdf-status {
-        margin: 28px 0;
-        padding: 16px;
+        margin: 22px 0;
+        padding: 14px;
         background: white;
         border-radius: 8px;
         text-align: center;
+        line-height: 1.7;
       }
 
-      #book-area {
-        position: relative;
+      #page-container {
         width: 100%;
-        display: flex;
-        justify-content: center;
-        overflow: auto;
-        margin: 24px auto;
-        touch-action: none;
-        -webkit-overflow-scrolling: touch;
+        margin: 20px auto;
+        padding: 10px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
       }
 
-      #book {
-        width: 100%;
-        max-width: 1200px;
-        margin: 0 auto;
-        flex-shrink: 0;
-      }
-
-      #zoom-view {
-        display: none;
-        position: absolute;
-        inset: 0;
-        z-index: 10;
-        overflow: auto;
-        background: #fff;
-        touch-action: none;
-      }
-
-      #zoom-canvas {
+      #pdf-canvas {
         display: block;
         width: 100%;
         height: auto;
-        transform-origin: 0 0;
+        margin: 0 auto;
         background: white;
-        will-change: transform;
-      }
-
-      .zoom-hint {
-        text-align: center;
-        color: #666;
-        font-size: 14px;
-        margin: 12px 0;
       }
 
       .controls {
         display: flex;
         justify-content: center;
         align-items: center;
+        gap: 14px;
         flex-wrap: wrap;
-        gap: 12px;
-        margin: 20px auto;
+        margin: 22px auto;
       }
 
       .controls button {
-        padding: 10px 22px;
+        min-width: 100px;
+        padding: 12px 20px;
         border: 0;
         border-radius: 6px;
         background: #263b35;
@@ -138,16 +115,30 @@ const { issue } = Astro.props;
 
       #page-number {
         color: #555;
+        font-size: 15px;
+        min-width: 100px;
+        text-align: center;
+      }
+
+      .reading-hint {
+        color: #666;
+        text-align: center;
         font-size: 14px;
+        line-height: 1.7;
       }
 
       @media (max-width: 600px) {
         body {
-          padding: 16px 10px 36px;
+          padding: 14px 8px 30px;
         }
 
         h1 {
           font-size: 21px;
+        }
+
+        #page-container {
+          padding: 4px;
+          border-radius: 4px;
         }
 
         .controls {
@@ -155,8 +146,9 @@ const { issue } = Astro.props;
         }
 
         .controls button {
-          padding: 10px 14px;
-          font-size: 14px;
+          min-width: 90px;
+          padding: 12px 14px;
+          font-size: 15px;
         }
       }
     </style>
@@ -171,16 +163,12 @@ const { issue } = Astro.props;
 
       <div id="pdf-status">PDF 載入中，請稍候……</div>
 
-      <div id="book-area">
-        <div id="book"></div>
-
-        <div id="zoom-view">
-          <canvas id="zoom-canvas"></canvas>
-        </div>
+      <div id="page-container">
+        <canvas id="pdf-canvas"></canvas>
       </div>
 
-      <p class="zoom-hint">
-        兩指張開放大清晰單頁，兩指靠近縮小回到翻頁模式
+      <p class="reading-hint">
+        使用下方按鈕切換頁面，手機可直接上下滑動頁面。
       </p>
 
       <div class="controls">
@@ -195,8 +183,8 @@ const { issue } = Astro.props;
     <script>
       import * as pdfjsLib from 'pdfjs-dist';
       import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
-      import { PageFlip } from 'page-flip';
 
+      // 相容部分 Safari 版本
       if (!Map.prototype.getOrInsertComputed) {
         Map.prototype.getOrInsertComputed = function (key, callback) {
           if (!this.has(key)) {
@@ -219,10 +207,8 @@ const { issue } = Astro.props;
 
       async function loadPDF() {
         const status = document.querySelector('#pdf-status');
-        const bookElement = document.querySelector('#book');
-        const bookArea = document.querySelector('#book-area');
-        const zoomView = document.querySelector('#zoom-view');
-        const zoomCanvas = document.querySelector('#zoom-canvas');
+        const canvas = document.querySelector('#pdf-canvas');
+        const container = document.querySelector('#page-container');
         const pageNumber = document.querySelector('#page-number');
         const prevButton = document.querySelector('#prev-button');
         const nextButton = document.querySelector('#next-button');
@@ -231,48 +217,41 @@ const { issue } = Astro.props;
         const pdfUrl = pdfConfig?.getAttribute('data-pdf-url');
 
         if (
-          !status || !bookElement || !bookArea ||
-          !zoomView || !zoomCanvas || !pageNumber ||
-          !prevButton || !nextButton || !pdfUrl
+          !status ||
+          !canvas ||
+          !container ||
+          !pageNumber ||
+          !prevButton ||
+          !nextButton ||
+          !pdfUrl
         ) {
-          if (status) status.textContent = '找不到 PDF 檔案網址。';
+          if (status) {
+            status.textContent = '找不到 PDF 檔案網址。';
+          }
           return;
         }
 
-        let pageFlip;
+        const context = canvas.getContext('2d');
+
+        if (!context) {
+          status.textContent = '無法建立 PDF 閱讀畫面。';
+          return;
+        }
+
         let pdf;
-        let zoomScale = 1;
+        let currentPage = 1;
         let renderTask = null;
         let renderVersion = 0;
-        let currentPage = 0;
-
-        const pointers = new Map();
-        let pinchStartDistance = 0;
-        let pinchStartScale = 1;
-        let panStartX = 0;
-        let panStartY = 0;
-        let panStartTranslateX = 0;
-        let panStartTranslateY = 0;
-        let translateX = 0;
-        let translateY = 0;
-        let zoomMode = false;
 
         function updateControls() {
-          const total = pdf.numPages;
+          pageNumber.textContent =
+            `第 ${currentPage} / ${pdf.numPages} 頁`;
 
-          pageNumber.textContent = `第 ${currentPage + 1} / ${total} 頁`;
-          prevButton.disabled = currentPage <= 0;
-          nextButton.disabled = currentPage >= total - 1;
+          prevButton.disabled = currentPage <= 1;
+          nextButton.disabled = currentPage >= pdf.numPages;
         }
 
-        function getCurrentPage() {
-          if (pageFlip) {
-            currentPage = pageFlip.getCurrentPageIndex();
-          }
-          return currentPage;
-        }
-
-        async function renderClearPage(pageIndex) {
+        async function renderPage(pageNumberToRender) {
           const version = ++renderVersion;
 
           if (renderTask) {
@@ -282,318 +261,107 @@ const { issue } = Astro.props;
             renderTask = null;
           }
 
-          const page = await pdf.getPage(pageIndex + 1);
-
-          if (version !== renderVersion) return;
-
-          const areaWidth = Math.max(
-            280,
-            bookArea.clientWidth
-          );
-
-          const baseViewport = page.getViewport({ scale: 1 });
-          const displayScale = areaWidth / baseViewport.width;
-
-          // 高解析度畫布，並考慮手機螢幕像素密度
-          const pixelRatio = Math.min(
-            3,
-            Math.max(2, window.devicePixelRatio || 1)
-          );
-
-          const viewport = page.getViewport({
-            scale: displayScale * pixelRatio
-          });
-
-          const context = zoomCanvas.getContext('2d');
-
-          if (!context) {
-            throw new Error('無法建立清晰頁面畫布。');
-          }
-
-          zoomCanvas.width = Math.ceil(viewport.width);
-          zoomCanvas.height = Math.ceil(viewport.height);
-
-          zoomCanvas.style.width = `${areaWidth}px`;
-          zoomCanvas.style.height =
-            `${areaWidth * baseViewport.height / baseViewport.width}px`;
-
-          renderTask = page.render({
-            canvasContext: context,
-            viewport
-          });
+          status.textContent = '正在載入頁面……';
 
           try {
+            const page = await pdf.getPage(pageNumberToRender);
+
+            if (version !== renderVersion) return;
+
+            const baseViewport = page.getViewport({ scale: 1 });
+
+            const availableWidth = Math.max(
+              200,
+              container.clientWidth - 8
+            );
+
+            const displayScale =
+              availableWidth / baseViewport.width;
+
+            // 依手機螢幕像素密度提高畫布解析度
+            const pixelRatio = Math.min(
+              3,
+              Math.max(1, window.devicePixelRatio || 1)
+            );
+
+            const viewport = page.getViewport({
+              scale: displayScale * pixelRatio,
+            });
+
+            const displayViewport = page.getViewport({
+              scale: displayScale,
+            });
+
+            canvas.width = Math.ceil(viewport.width);
+            canvas.height = Math.ceil(viewport.height);
+
+            canvas.style.width = `${displayViewport.width}px`;
+            canvas.style.height = `${displayViewport.height}px`;
+
+            context.setTransform(1, 0, 0, 1, 0, 0);
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            renderTask = page.render({
+              canvasContext: context,
+              viewport,
+            });
+
             await renderTask.promise;
+
+            if (version !== renderVersion) return;
+
+            renderTask = null;
+            currentPage = pageNumberToRender;
+
+            updateControls();
+            status.textContent = '頁面載入完成。';
           } catch (error) {
-            if (error?.name !== 'RenderingCancelledException') {
-              throw error;
+            if (error?.name === 'RenderingCancelledException') {
+              return;
+            }
+
+            console.error('PDF 頁面顯示失敗：', error);
+
+            if (version === renderVersion) {
+              status.textContent =
+                '頁面顯示失敗：' +
+                (error instanceof Error ? error.message : String(error));
             }
           }
-
-          if (version !== renderVersion) return;
-
-          renderTask = null;
-          applyZoomTransform();
         }
 
-        function applyZoomTransform() {
-          zoomCanvas.style.transform =
-            `translate(${translateX}px, ${translateY}px) scale(${zoomScale})`;
-        }
-
-        async function enterZoomMode() {
-          if (zoomMode) return;
-
-          zoomMode = true;
-          currentPage = getCurrentPage();
-
-          bookElement.style.visibility = 'hidden';
-          zoomView.style.display = 'block';
-
-          zoomScale = 1;
-          translateX = 0;
-          translateY = 0;
-
-          await renderClearPage(currentPage);
-        }
-
-        function exitZoomMode() {
-          if (!zoomMode) return;
-
-          zoomMode = false;
-          zoomScale = 1;
-          translateX = 0;
-          translateY = 0;
-
-          renderVersion++;
-
-          if (renderTask) {
-            try {
-              renderTask.cancel();
-            } catch (_) {}
-            renderTask = null;
+        prevButton.addEventListener('click', () => {
+          if (currentPage > 1) {
+            renderPage(currentPage - 1);
           }
+        });
 
-          zoomView.style.display = 'none';
-          bookElement.style.visibility = 'visible';
-
-          if (pageFlip) {
-            pageFlip.turnToPage(currentPage);
+        nextButton.addEventListener('click', () => {
+          if (currentPage < pdf.numPages) {
+            renderPage(currentPage + 1);
           }
-
-          updateControls();
-        }
-
-        function getDistance(a, b) {
-          return Math.hypot(a.x - b.x, a.y - b.y);
-        }
-
-        function getMidpoint(a, b) {
-          return {
-            x: (a.x + b.x) / 2,
-            y: (a.y + b.y) / 2
-          };
-        }
+        });
 
         try {
           status.textContent = '正在讀取 PDF，請稍候……';
 
-          pdf = await pdfjsLib.getDocument({ url: pdfUrl }).promise;
+          pdf = await pdfjsLib.getDocument({
+            url: pdfUrl,
+          }).promise;
 
-          const pageImages = [];
-          let bookWidth = 600;
-          let bookHeight = 850;
-
-          for (let pageIndex = 1; pageIndex <= pdf.numPages; pageIndex++) {
-            status.textContent =
-              `正在處理第 ${pageIndex} / ${pdf.numPages} 頁……`;
-
-            const page = await pdf.getPage(pageIndex);
-            const baseViewport = page.getViewport({ scale: 1 });
-
-            if (pageIndex === 1) {
-              bookWidth = 600;
-              bookHeight = Math.round(
-                600 * baseViewport.height / baseViewport.width
-              );
-            }
-
-            const viewport = page.getViewport({ scale: 2.5 });
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-
-            if (!context) {
-              throw new Error('無法建立 PDF 頁面畫布。');
-            }
-
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-
-            await page.render({
-              canvas,
-              canvasContext: context,
-              viewport
-            }).promise;
-
-            pageImages.push(canvas.toDataURL('image/jpeg', 0.95));
-
-            canvas.width = 0;
-            canvas.height = 0;
-          }
-
-          status.textContent = '正在建立翻頁閱讀器……';
-
-          pageFlip = new PageFlip(bookElement, {
-            width: bookWidth,
-            height: bookHeight,
-            size: 'stretch',
-            minWidth: 280,
-            maxWidth: 1200,
-            minHeight: 396,
-            maxHeight: 1700,
-            drawShadow: true,
-            flippingTime: 800,
-            usePortrait: true,
-            startPage: 0,
-            autoSize: true,
-            maxShadowOpacity: 0.5,
-            showCover: true,
-            mobileScrollSupport: false
-          });
-
-          pageFlip.loadFromImages(pageImages);
-
-          pageFlip.on('flip', () => {
-            currentPage = pageFlip.getCurrentPageIndex();
-            updateControls();
-          });
-
-          prevButton.addEventListener('click', () => {
-            if (zoomMode) {
-              exitZoomMode();
-            }
-
-            pageFlip.flipPrev();
-          });
-
-          nextButton.addEventListener('click', () => {
-            if (zoomMode) {
-              exitZoomMode();
-            }
-
-            pageFlip.flipNext();
-          });
-
-          // 雙指縮放與拖曳
-          bookArea.addEventListener('pointerdown', (event) => {
-            pointers.set(event.pointerId, {
-              x: event.clientX,
-              y: event.clientY
-            });
-
-            if (pointers.size === 2) {
-              const points = Array.from(pointers.values());
-
-              pinchStartDistance = getDistance(points[0], points[1]);
-              pinchStartScale = zoomScale;
-
-              if (!zoomMode) {
-                enterZoomMode();
-              }
-            } else if (pointers.size === 1 && zoomMode) {
-              panStartX = event.clientX;
-              panStartY = event.clientY;
-              panStartTranslateX = translateX;
-              panStartTranslateY = translateY;
-            }
-          });
-
-          bookArea.addEventListener('pointermove', (event) => {
-            if (!pointers.has(event.pointerId)) return;
-
-            pointers.set(event.pointerId, {
-              x: event.clientX,
-              y: event.clientY
-            });
-
-            if (pointers.size === 2) {
-              event.preventDefault();
-
-              const points = Array.from(pointers.values());
-              const distance = getDistance(points[0], points[1]);
-
-              if (pinchStartDistance > 0) {
-                const nextScale =
-                  pinchStartScale * distance / pinchStartDistance;
-
-                zoomScale = Math.max(1, Math.min(4, nextScale));
-
-                if (zoomScale <= 1.03) {
-                  exitZoomMode();
-                  pinchStartDistance = 0;
-                  return;
-                }
-
-                if (!zoomMode) {
-                  enterZoomMode();
-                }
-
-                const midpoint = getMidpoint(points[0], points[1]);
-                const rect = bookArea.getBoundingClientRect();
-
-                const centerX = midpoint.x - rect.left;
-                const centerY = midpoint.y - rect.top;
-
-                const ratio = zoomScale / pinchStartScale;
-
-                translateX = centerX - (centerX - translateX) * ratio;
-                translateY = centerY - (centerY - translateY) * ratio;
-
-                applyZoomTransform();
-              }
-            } else if (pointers.size === 1 && zoomMode && zoomScale > 1) {
-              event.preventDefault();
-
-              translateX =
-                panStartTranslateX + event.clientX - panStartX;
-
-              translateY =
-                panStartTranslateY + event.clientY - panStartY;
-
-              applyZoomTransform();
-            }
-          }, { passive: false });
-
-          function endPointer(event) {
-            pointers.delete(event.pointerId);
-
-            if (pointers.size < 2) {
-              pinchStartDistance = 0;
-            }
-
-            if (pointers.size === 1 && zoomMode) {
-              const remaining = Array.from(pointers.values())[0];
-
-              panStartX = remaining.x;
-              panStartY = remaining.y;
-              panStartTranslateX = translateX;
-              panStartTranslateY = translateY;
-            }
-          }
-
-          bookArea.addEventListener('pointerup', endPointer);
-          bookArea.addEventListener('pointercancel', endPointer);
+          currentPage = 1;
 
           updateControls();
 
-          status.textContent =
-            `翻頁閱讀器載入成功！共 ${pdf.numPages} 頁。`;
+          await renderPage(currentPage);
 
+          status.textContent =
+            `PDF 載入完成，共 ${pdf.numPages} 頁。`;
         } catch (error) {
-          console.error('閱讀器載入失敗：', error);
+          console.error('PDF 載入失敗：', error);
 
           status.textContent =
-            '閱讀器載入失敗：' +
+            'PDF 載入失敗：' +
             (error instanceof Error ? error.message : String(error));
         }
       }
