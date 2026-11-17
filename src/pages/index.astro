@@ -1,3 +1,4 @@
+
 ---
 import '../styles/global.css';
 import { getCollection } from 'astro:content';
@@ -77,8 +78,9 @@ const issues = allIssues
       color: white;
     }
 
+    /* 首頁封面 */
     .hero {
-      padding: 90px 24px;
+      padding: 100px 24px 90px;
       text-align: center;
       background: linear-gradient(135deg, #eaf8f8, #fff8e9);
     }
@@ -92,16 +94,24 @@ const issues = allIssues
     }
 
     .hero h1 {
-      font-size: clamp(30px, 5vw, 48px);
-      line-height: 1.5;
+      max-width: 900px;
+      margin: 28px auto 22px;
+      font-size: clamp(28px, 4.2vw, 46px);
+      line-height: 1.45;
+      letter-spacing: 0.02em;
       color: #123b60;
+      font-weight: 800;
+      text-wrap: balance;
     }
 
-    .hero p {
-      max-width: 650px;
-      margin: 20px auto;
+    .hero-description {
+      max-width: 560px;
+      margin: 0 auto 32px;
+      font-size: clamp(15px, 1.8vw, 18px);
       line-height: 1.9;
-      font-size: 17px;
+      letter-spacing: 0.04em;
+      color: #40566a;
+      text-wrap: pretty;
     }
 
     .hero-button,
@@ -113,6 +123,11 @@ const issues = allIssues
       color: white;
       text-decoration: none;
       font-weight: 700;
+    }
+
+    .hero-button:hover,
+    .read-button:hover {
+      background: #06658c;
     }
 
     .about,
@@ -222,6 +237,7 @@ const issues = allIssues
       margin-bottom: 15px;
     }
 
+    /* 手機版 */
     @media (max-width: 650px) {
       .header {
         flex-direction: column;
@@ -249,11 +265,23 @@ const issues = allIssues
       }
 
       .hero {
-        padding: 60px 20px;
+        padding: 64px 20px 58px;
       }
 
       .hero h1 {
-        font-size: 29px;
+        max-width: 390px;
+        margin: 22px auto 18px;
+        font-size: clamp(25px, 7vw, 32px);
+        line-height: 1.55;
+        letter-spacing: 0.01em;
+      }
+
+      .hero-description {
+        max-width: 340px;
+        margin-bottom: 26px;
+        font-size: 16px;
+        line-height: 1.9;
+        letter-spacing: 0.02em;
       }
 
       .about,
@@ -278,6 +306,25 @@ const issues = allIssues
 
       footer {
         padding: 36px 18px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .hero {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .hero h1 {
+        font-size: 25px;
+      }
+
+      nav {
+        gap: 13px;
+      }
+
+      nav a {
+        font-size: 13px;
       }
     }
   </style>
@@ -311,13 +358,11 @@ const issues = allIssues
       <p class="eyebrow">ADAPTED SPORTS · TAIWAN</p>
 
       <h1>
-        讓運動不再受限，<br />
-        讓參與擁有更多可能。
+        讓運動不再受限，讓參與擁有更多可能。
       </h1>
 
-      <p>
-        從知識、研究到國際實踐，
-        一起探索適應運動的多元世界。
+      <p class="hero-description">
+        從知識、研究到國際實踐，一起探索適應運動的多元世界。
       </p>
 
       <a class="hero-button" href="#issues">
