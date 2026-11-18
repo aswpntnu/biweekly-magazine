@@ -316,7 +316,7 @@ const issues = allIssues
             />
 
             <p class="date">
-              {issue.data.publish_date || '出版日期待定'}
+              {issue.data.publish_date ? new Date(issue.data.publish_date).toLocaleDateString('zh-TW', { timeZone: 'UTC', year: 'numeric', month: 'long', day: 'numeric' }) : '出版日期待定'}
               {issue.data.issue_number && ` · ${issue.data.issue_number}`}
             </p>
 
