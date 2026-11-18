@@ -3,18 +3,24 @@ import '../styles/global.css';
 import { getCollection } from 'astro:content';
 
 const allIssues = await getCollection('issues');
+
 const issues = allIssues
   .filter((issue) => issue.data.published)
   .sort((a, b) =>
     (b.data.publish_date || '').localeCompare(a.data.publish_date || '')
   );
+
+const latestIssues = issues.slice(0, 3);
 ---
 
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="適應運動，推廣適應體育與適應運動，促進不同能力者平等參與運動。" />
+  <meta
+    name="description"
+    content="適應運動，推廣適應體育與適應運動，促進不同能力者平等參與運動。"
+  />
   <title>適應運動｜Adapted Sports+TW</title>
 
   <style>
@@ -121,7 +127,8 @@ const issues = allIssues
     }
 
     .hero-button,
-    .read-button {
+    .read-button,
+    .all-issues-button {
       display: inline-block;
       padding: 14px 30px;
       border-radius: 30px;
@@ -133,7 +140,8 @@ const issues = allIssues
     }
 
     .hero-button:hover,
-    .read-button:hover {
+    .read-button:hover,
+    .all-issues-button:hover {
       background: #06658c;
     }
 
@@ -157,36 +165,48 @@ const issues = allIssues
       font-size: 17px;
     }
 
+    /* 最新期刊 */
     .issue-list {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 30px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 30px;
     }
 
     .issue-card {
-      display: grid;
-      grid-template-columns: minmax(180px, 280px) 1fr;
-      gap: 28px;
-      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      padding: 18px;
       border: 1px solid #e8eeee;
       border-radius: 16px;
       background: #fff;
       box-shadow: 0 5px 20px rgba(0,0,0,.04);
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .issue-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 28px rgba(0,0,0,.08);
     }
 
     .issue-card img {
       width: 100%;
-      height: auto;
+      aspect-ratio: 3 / 4;
       object-fit: contain;
       border-radius: 8px;
+      background: #f7f7f7;
     }
 
     .issue-info {
-      align-self: center;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
     }
 
     .issue-info h3 {
+      margin: 8px 0 10px;
       line-height: 1.6;
+      font-size: 19px;
     }
 
     .issue-info p {
@@ -194,9 +214,39 @@ const issues = allIssues
       color: #555;
     }
 
+    .issue-info .description {
+      flex: 1;
+      margin-bottom: 18px;
+    }
+
     .date {
       color: #078eaa !important;
       font-size: 14px;
+      margin-top: 18px;
+      margin-bottom: 0;
+    }
+
+    .read-button {
+      width: 100%;
+      text-align: center;
+      margin-top: auto;
+    }
+
+    .all-issues {
+      display: flex;
+      justify-content: center;
+      margin-top: 36px;
+    }
+
+    .all-issues-button {
+      background: transparent;
+      color: #087fae;
+      border: 2px solid #087fae;
+    }
+
+    .all-issues-button:hover {
+      color: white;
+      background: #087fae;
     }
 
     footer {
@@ -242,6 +292,13 @@ const issues = allIssues
       font-size: 18px;
       font-weight: 700;
       margin-bottom: 15px;
+    }
+
+    /* 平板 */
+    @media (max-width: 900px) {
+      .issue-list {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
 
     /* 手機版 */
@@ -296,14 +353,17 @@ const issues = allIssues
         padding: 48px 20px;
       }
 
-      .issue-card {
+      .issue-list {
         grid-template-columns: 1fr;
-        gap: 18px;
+        gap: 22px;
+      }
+
+      .issue-card {
         padding: 16px;
       }
 
       .issue-card img {
-        max-width: 280px;
+        max-width: 300px;
         margin: 0 auto;
       }
 
@@ -422,37 +482,49 @@ const issues = allIssues
 
       <h2>閱讀文章</h2>
 
-      {issues.length > 0 ? (
-        <div class="issue-list">
-          {issues.map((issue) => (
-            <article class="issue-card">
-              <img
-                src={issue.data.cover || "/images/封面.jpg"}
-                alt={`${issue.data.title}封面`}
-              />
+      {latestIssues.length > 0 ? (
+        <>
+          <div class="issue-list">
+            {latestIssues.map((issue) => (
+              <article class="issue-card">
+                <img
+                  src={issue.data.cover || "/images/封面.jpg"}
+                  alt={`${issue.data.title}封面`}
+                />
 
-              <div class="issue-info">
-                <p class="date">
-                  {issue.data.publish_date || '出版日期待定'}
-                  {issue.data.issue_number && ` · ${issue.data.issue_number}`}
-                </p>
+                <div class="issue-info">
+                  <p class="date">
+                    {issue.data.publish_date || '出版日期待定'}
+                    {issue.data.issue_number && ` · ${issue.data.issue_number}`}
+                  </p>
 
-                <h3>{issue.data.title}</h3>
+                  <h3>{issue.data.title}</h3>
 
-                <p>{issue.data.description}</p>
+                  <p class="description">
+                    {issue.data.description}
+                  </p>
 
-                {issue.data.pdf_url && (
-                  <a
-                    class="read-button"
-                    href={`/read/${issue.id}`}
-                  >
-                    閱讀本期文章 ↗
-                  </a>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
+                  {issue.data.pdf_url && (
+                    <a
+                      class="read-button"
+                      href={`/read/${issue.id}`}
+                    >
+                      閱讀本期文章 ↗
+                    </a>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+
+          {issues.length > 3 && (
+            <div class="all-issues">
+              <a class="all-issues-button" href="/issues">
+                查看全部期刊 →
+              </a>
+            </div>
+          )}
+        </>
       ) : (
         <p>新一期文章即將推出，敬請期待。</p>
       )}
@@ -494,12 +566,13 @@ const issues = allIssues
     <p>E-mail：aswp.ntnu@gmail.com</p>
     <p>地址：臺北市大安區和平東路一段162號</p>
   </footer>
-<!-- Cloudflare Web Analytics -->
-<script
-  type="module"
-  src="https://static.cloudflareinsights.com/beacon.min.js"
-  data-cf-beacon='{"token": "4a9f3553ac1041ed8786972b3824e03b"}'
-></script>
-<!-- End Cloudflare Web Analytics -->
+
+  <!-- Cloudflare Web Analytics -->
+  <script
+    type="module"
+    src="https://static.cloudflareinsights.com/beacon.min.js"
+    data-cf-beacon='{"token": "4a9f3553ac1041ed8786972b3824e03b"}'
+  ></script>
+  <!-- End Cloudflare Web Analytics -->
 </body>
 </html>
