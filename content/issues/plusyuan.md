@@ -6,7 +6,6 @@ cover: /images/封面.jpg
 pdf_url: /images/PLUS.VOL.01.ISSUE.01.pdf
 description: |-
   《適界PLUS＋》創刊號｜Vol. 01, Issue 01
-
   發行單位｜國立臺灣師範大學體育研究與發展中心
   計畫名稱｜運動部適應運動國際專業培力計畫
   指導單位｜ 運動部適應運動司
